@@ -1,59 +1,58 @@
 #pragma once
 
-#include "Mesh.h"
-
-class CViewport
-{
+class CViewport{
 public:
-	CViewport(int nLeft, int nTop, int nWidth, int nHeight)
-	{
-		m_nLeft = nLeft;
-		m_nTop = nTop;
-		m_nWidth = nWidth;
-		m_nHeight = nHeight;
-	}
+	CViewport() {}
 	virtual ~CViewport() {}
 
 	int m_nLeft;
 	int m_nTop;
 	int m_nWidth;
 	int m_nHeight;
+
+	void SetViewport(int nLeft, int nTop, int nWidth, int nHeight);
 };
 
-class CCamera
-{
+class CCamera{
 public:
 	CCamera() {}
-	virtual ~CCamera() { if (m_pViewport) delete m_pViewport; }
+	virtual ~CCamera() {}
 
 private:
-	float m_fxPosition = 0.0f;
-	float m_fyPosition = 0.0f;
-	float m_fzPosition = 0.0f;
+	XMFLOAT3 m_xmf3Position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
-	float m_fxRotation = 0.0f;
-	float m_fyRotation = 0.0f;
-	float m_fzRotation = 0.0f;
+	XMFLOAT3 m_xmf3Right = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	XMFLOAT3 m_xmf3Up = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	XMFLOAT3 m_xmf3Look = XMFLOAT3(0.0f, 0.0f, 1.0f);
 
 	float m_fFOVAngle = 90.0f;
 	float m_fProjectRectDistance = 1.0f;
 
-	CViewport* m_pViewport = NULL;
-
 	float m_fAspectRatio = float(FRAMEBUFFER_WIDTH) / float(FRAMEBUFFER_HEIGHT);
 
 public:
-	CPoint3D CameraTransform(CPoint3D& f3Model);
-	CPoint3D ProjectionTransform(CPoint3D& f3Camera);
-	CPoint3D ScreenTransform(CPoint3D& f3Projection);
+	XMFLOAT4X4 m_xmf4x4View = Matrix4x4::Identity();
+	XMFLOAT4X4 m_xmf4x4Project = Matrix4x4::Identity();
+	XMFLOAT4X4 m_xmf4x4ViewProject = Matrix4x4::Identity();
 
-	void SetPosition(float x, float y, float z) { m_fxPosition = x; m_fyPosition = y; m_fzPosition = z; }
-	void SetRotation(float fPitch, float fYaw, float fRoll) { m_fxRotation = fPitch; m_fyRotation = fYaw; m_fzRotation = fRoll; }
+	CViewport m_Viewport;
 
-	void SetViewprot(int xStart, int yStart, int nWidth, int nHeight);
+public:
 	void SetFOVAngle(float fFOVAngle);
 
+	void GenerateViewMatrix();
+	void GeneratePerspectiveProjectionMatrix(float fNearPlaneDistance, float fFarPlaneDistance, float fFOVAngle);
+
+	void SetViewport(int nLeft, int nTop, int nWidth, int nHeight);
+
+	void SetLookAt(XMFLOAT3& xmf3LookAt, XMFLOAT3& xmf3Up);
+	void SetLookAt(XMFLOAT3& xmf3Position, XMFLOAT3& xmf3LookAt, XMFLOAT3& xmf3Up);
+
+	void Move(XMFLOAT3& xmf3Shift);
 	void Move(float x, float y, float z);
-	void Rotate(float fPitch, float fYaw, float fRoll);
+
+	void Rotate(float fPitch = 0.0f, float fYaw = 0.0f, float fRoll = 0.0f);
+
+	void Update(CPlayer* pPlayer, XMFLOAT3& xm3fLookAt, float fTimeElapsed = 0.016f);
 };
 
