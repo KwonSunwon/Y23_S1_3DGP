@@ -1,24 +1,32 @@
 #pragma once
 
-#include "GameObject.h"
-#include "Camera.h"
+#include "Timer.h"
 
 class CScene
 {
 public:
-	CScene() { }
-	virtual ~CScene() { }
+	CScene();
+	~CScene() {};
 
-private:
-	int m_nObjects = 0;
-	CGameObject** m_ppObjects = NULL;
+	bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM	lParam);
+	bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
-public:
-	virtual void BuildObjects();
-	virtual void ReleaseObjects();
+	void CreateGraphicsRootSignature(ID3D12Device* pd3dDevice);
+	void CreateGraphicsPipelineState(ID3D12Device* pd3dDevice);
 
-	virtual void Animate(float fElapsedTime);
-		
-	virtual void Render(HDC hDCFrameBuffer, CCamera* pCamera);
+	void BuildObjects(ID3D12Device* pd3dDevice);
+	void ReleaseObjects();
+
+	bool ProcessInput();
+	void AnimateObjects(float fTimeElapsed);
+
+	void PrepareRender(ID3D12GraphicsCommandList* pd3dCommandList);
+	void Render(ID3D12GraphicsCommandList* pd3dCommandList);
+
+	ID3D12RootSignature* m_pd3dGraphicsRootSignature = NULL;
+	//루트 시그너쳐를 나타내는 인터페이스 포인터이다. 
+	ID3D12PipelineState* m_pd3dPipelineState = NULL;
+	//파이프라인 상태를 나타내는 인터페이스 포인터이다.
+
 };
 

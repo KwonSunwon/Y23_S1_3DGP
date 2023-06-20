@@ -1,6 +1,9 @@
 ﻿#include "stdafx.h"
 #include "Player.h"
 
+#include "GameObject.h"
+#include "Camera.h"
+
 void CPlayer::SetPosition(float x, float y, float z)
 {
 	//플레이어 객체의 위치와 카메라의 위치를 설정한다. 

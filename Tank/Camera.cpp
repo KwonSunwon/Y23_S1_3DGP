@@ -47,9 +47,9 @@ void CCamera::SetLookAt(XMFLOAT3& xmf3Position, XMFLOAT3& xmf3LookAt, XMFLOAT3& 
 		XMMatrixLookAtLH(XMLoadFloat3(&m_xmf3Position),
 			XMLoadFloat3(&xmf3LookAt), XMLoadFloat3(&xmf3Up)));
 
-	XMVECTORF32 xmf32vRight = {m_xmf4x4View._11, m_xmf4x4View._21, m_xmf4x4View._31, 0.0f};
-	XMVECTORF32 xmf32vUp = {m_xmf4x4View._12, m_xmf4x4View._22, m_xmf4x4View._32, 0.0f};
-	XMVECTORF32 xmf32vLook = {m_xmf4x4View._13, m_xmf4x4View._23, m_xmf4x4View._33, 0.0f};
+	XMVECTORF32 xmf32vRight = { m_xmf4x4View._11, m_xmf4x4View._21, m_xmf4x4View._31, 0.0f };
+	XMVECTORF32 xmf32vUp = { m_xmf4x4View._12, m_xmf4x4View._22, m_xmf4x4View._32, 0.0f };
+	XMVECTORF32 xmf32vLook = { m_xmf4x4View._13, m_xmf4x4View._23, m_xmf4x4View._33, 0.0f };
 
 	XMStoreFloat3(&m_xmf3Right, XMVector3Normalize(xmf32vRight));
 	XMStoreFloat3(&m_xmf3Up, XMVector3Normalize(xmf32vUp));
@@ -73,4 +73,69 @@ void CCamera::SetFOVAngle(float fFOVAngle)
 	m_fProjectRectDistance = float(1.0f / tan(XMConvertToRadians(fFOVAngle * 0.5f)));
 }
 
-// CCamera::GeneratePerspectiveProjectionMatrix() 부터 만들면 됨
+void CCamera::GeneratePerspectiveProjectionMatrix(float fNearPlaneDistance, float fFarPlaneDistance, float fFOVAngle)
+{
+	float fAspectRatio = float(m_Viewport.m_nWidth) / float(m_Viewport.m_nHeight);
+	XMStoreFloat4x4(&m_xmf4x4Project,
+		XMMatrixPerspectiveFovLH(XMConvertToRadians(fFOVAngle), fAspectRatio, fNearPlaneDistance, fFarPlaneDistance));
+}
+
+void CCamera::Move(XMFLOAT3& xmf3Shift)
+{
+	XMStoreFloat3(&m_xmf3Position, XMVectorAdd(XMLoadFloat3(&m_xmf3Position), XMLoadFloat3(&xmf3Shift)));
+}
+
+void CCamera::Move(float x, float y, float z)
+{
+	XMFLOAT3 xmf3Shift = XMFLOAT3(x, y, z);
+	Move(xmf3Shift);
+
+	//Move(XMFLOAT3(x, y, z)); 
+	// 교수님이 주신 파일에는 똑같은 방식으로 변수 전달하는데 오류가 안남
+	// 근데 여기선 오류 발생
+}
+
+void CCamera::Rotate(float fPitch, float fYaw, float fRoll)
+{
+	if (fPitch != 0.0f) {
+		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Right), XMConvertToRadians(fPitch));
+		XMStoreFloat3(&m_xmf3Look, XMVector3TransformNormal(XMLoadFloat3(&m_xmf3Look), xmmtxRotate));
+		XMStoreFloat3(&m_xmf3Up, XMVector3TransformNormal(XMLoadFloat3(&m_xmf3Up), xmmtxRotate));
+	}
+	if (fYaw != 0.0f) {
+		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Up), XMConvertToRadians(fYaw));
+		XMStoreFloat3(&m_xmf3Look, XMVector3TransformNormal(XMLoadFloat3(&m_xmf3Look), xmmtxRotate));
+		XMStoreFloat3(&m_xmf3Right, XMVector3TransformNormal(XMLoadFloat3(&m_xmf3Right), xmmtxRotate));
+	}
+	if (fRoll != 0.0f) {
+		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Look), XMConvertToRadians(fRoll));
+		XMStoreFloat3(&m_xmf3Up, XMVector3TransformNormal(XMLoadFloat3(&m_xmf3Up), xmmtxRotate));
+		XMStoreFloat3(&m_xmf3Right, XMVector3TransformNormal(XMLoadFloat3(&m_xmf3Right), xmmtxRotate));
+	}
+}
+
+void CCamera::Update(CPlayer* pPlayer, XMFLOAT3& xmf3LookAt, float fTimeElapsed)
+{
+	XMMATRIX xmmtx4Rotate;
+	xmmtx4Rotate.r[0] = XMVectorSet(pPlayer->m_xmf3Right.x, pPlayer->m_xmf3Right.y, pPlayer->m_xmf3Right.z, 0.0f);
+	xmmtx4Rotate.r[1] = XMVectorSet(pPlayer->m_xmf3Up.x, pPlayer->m_xmf3Up.y, pPlayer->m_xmf3Up.z, 0.0f);
+	xmmtx4Rotate.r[2] = XMVectorSet(pPlayer->m_xmf3Look.x, pPlayer->m_xmf3Look.y, pPlayer->m_xmf3Look.z, 0.0f);
+	xmmtx4Rotate.r[3] = XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
+
+	XMVECTOR xmvPosition = XMLoadFloat3(&m_xmf3Position);
+	XMVECTOR xmvOffset = XMVector3TransformCoord(XMLoadFloat3(&pPlayer->m_xmf3CameraOffset), xmmtx4Rotate);
+	XMVECTOR xmvNewPosition = XMVectorAdd(XMLoadFloat3(&pPlayer->m_xmf3Position), xmvOffset);
+	XMVECTOR xmvDirection = XMVectorSubtract(xmvNewPosition, xmvPosition);
+
+	float fLength = XMVectorGetX(XMVector3Length(xmvDirection));
+	xmvDirection = XMVector3Normalize(xmvDirection);
+	float fTimeLagScale = fTimeElapsed * 4.0f;
+	float fDistance = fLength * fTimeLagScale;
+
+	if (fDistance > fLength) fDistance = fLength;
+	if (fLength < 0.01f) fDistance = fLength;
+	if (fDistance > 0) {
+		XMStoreFloat3(&m_xmf3Position, XMVectorAdd(xmvPosition, XMVectorScale(xmvDirection, fDistance)));
+		SetLookAt(pPlayer->m_xmf3Position, pPlayer->m_xmf3Up);
+	}
+}

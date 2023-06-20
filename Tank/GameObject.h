@@ -8,6 +8,8 @@ public:
 public:
 	bool m_bActive = true;
 
+	// 다중 메쉬를 가질 수 있도록 변경 해야됨
+	// std::shared_ptr<CMesh[]> ? 
 	std::shared_ptr<CMesh> m_pMesh = nullptr;
 	XMFLOAT4X4 m_xmf4x4World = Matrix4x4::Identity();
 
@@ -19,6 +21,11 @@ public:
 
 	XMFLOAT3 m_xmf3RotationAxis = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	float m_fRotationSpeed = 0.0f;
+
+	// 형제나 자식 객체를 가질 수 있도록 포인터 추가 해야됨
+	// 스마트 포인터로 표현하려면 어떻게 해야되나...
+	CGameObject* m_pChild = nullptr;
+	CGameObject* m_pSibling = nullptr;
 
 public:
 	void SetMesh(CMesh* pMesh) {
