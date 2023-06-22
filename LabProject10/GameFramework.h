@@ -2,6 +2,7 @@
 
 #include "Timer.h"
 #include "Scene.h"
+#include "Player.h"
 
 class CGameFramework
 {
@@ -44,6 +45,10 @@ private:
 	_TCHAR m_pszFrameRate[50];
 
 	CScene* m_pScene;
+
+	CPlayer* m_pPlayer = NULL;
+
+	POINT m_ptOldCursorPos;
 
 public:
 	CGameFramework();

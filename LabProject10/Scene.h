@@ -29,11 +29,14 @@ public:
 
 	void CScene::CreateGraphicsPipelineState(ID3D12Device* pd3dDevice);
 
+	CHeightMapTerrain* GetTerrain() { return(m_pTerrain); }
+
 protected:
 	//씬은 게임 객체들의 집합이다. 게임 객체는 셰이더를 포함한다. 
 	//CGameObject** m_ppObjects = NULL;
 	//int m_nObjects = 0;
 	CObjectsShader* m_pShaders = NULL;
+	CHeightMapTerrain* m_pTerrain = NULL;
 	int m_nShaders = 0;
 
 	ID3D12RootSignature* m_pd3dGraphicsRootSignature = NULL;
